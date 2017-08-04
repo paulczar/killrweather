@@ -1,0 +1,60 @@
+version: "3"
+
+services:
+  app:
+    image: killrweather
+    build:
+      context: .
+      dockerfile: Dockerfile
+#    links:
+#      - cassandra:cassandra
+    network_mode: "host"
+    depends_on:
+      - cassandra
+    #environment:
+      #CASSANDRA_SEEDS: cassandra
+      #KAFKA_HOSTS: kafka
+    command: app/run
+
+  ingest:
+    image: killrweather
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    links:
+#      - killrweather-app:kafka
+    network_mode: "host"
+#    environment:
+#      KAFKA_HOSTS: kafka:9092
+    command: '"clients/runMain com.datastax.killrweather.KafkaDataIngestionApp"'
+
+  client:
+    image: killrweather
+#    ports:
+#      - 8080:8080
+#   build:
+#     context: .
+#     dockerfile: Dockerfile
+    environment:
+      HTTP_HOST: 0.0.0.0
+    command: '"clients/runMain com.datastax.killrweather.KillrWeatherClientApp"'
+
+  cassandra:
+    image: cassandra:2.2
+    network_mode: "host"
+  cassandra-data:
+    image: cassandra:2.2
+    network_mode: "host"
+    #links:
+    #  - cassandra:cassandra
+    depends_on:
+      - cassandra
+    volumes:
+      - ./data:/data
+    working_dir: /data
+    command: ./data-loader.sh 127.0.0.1
+
+
+
+networks:
+  default:

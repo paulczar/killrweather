@@ -28,8 +28,58 @@ There are many flavors of time series data. Some can be windowed in the stream, 
     git clone https://github.com/killrweather/killrweather.git
     cd killrweather
 
+### Build and run in Docker
 
-### Build the code 
+> Note: in the following `docker-compose logs` commands you may need to hit
+CTRL-C to exit once you see the expected output.
+
+1. [Download and install Docker CE](https://docs.docker.com/engine/installation/)
+2. [Download and install Docker Compose](https://docs.docker.com/compose/install/)
+3. Start Cassandra and load the Cassandra databases
+
+    $ docker-compose up -d cassandra-data
+    $ docker-compose logs -f cassandra-data
+    ...
+    ...
+    cassandra-data_1  | Starting copy of isd_weather_data.weather_station with columns [id, name, country_code, state_code, call_sign, lat, long, elevation].
+    Processed: 19704 rows; Rate:   14263 rows/s; Avg. rate:    2408 rows/sate:     639 rows/s
+    cassandra-data_1  | 19704 rows imported from 1 files in 8.181 seconds (0 skipped).
+    killrweather_cassandra-data_1 exited with code 0
+
+4. Start the main KillrWeather App
+
+    $ docker-compose up -d app
+    $ docker-compose logs -f app
+    ...
+    ...
+    app_1             | -------------------------------------------
+    app_1             | Time: 1501836796000 ms
+    app_1             | -------------------------------------------
+
+
+5. Start the data ingestion and client apps:
+
+    $ docker-compose up -d ingest client
+    $ docker-compose logs -f ingest client
+    ...
+    ...
+    ingest_1          | [INFO] [2017-08-04 08:55:54,466] [com.datastax.killrweather.HttpNodeGuardian]: Sending 725030:14732,2008,02,27,22,2.2,-7.2,1000.5,310,8.2,7,0.0,0.0 to Kafka
+    ingest_1          | [INFO] [2017-08-04 08:55:54,484] [com.datastax.killrweather.HttpNodeGuardian]: Sending 725030:14732,2008,02,27,23,1.7,-7.8,1002.2,310,10.8,7,0.0,0.0 to Kafka
+
+6. Check the data is being ingested correctly into cassandra
+
+    $ dc exec cassandra cqlsh -e "select * from isd_weather_data.raw_weather_data limit 10;"
+     wsid         | year | month | day | hour | dewpoint | one_hour_precip | pressure | six_hour_precip | sky_condition | sky_condition_text | temperature | wind_direction | wind_speed
+    --------------+------+-------+-----+------+----------+-----------------+----------+-----------------+---------------+--------------------+-------------+----------------+------------
+     725030:14732 | 2008 |    12 |  31 |   23 |    -11.7 |               0 |   1010.7 |               0 |             2 |                0.0 |        -4.4 |            330 |       11.8
+     725030:14732 | 2008 |    12 |  31 |   22 |     -8.9 |            -0.1 |   1008.3 |               0 |             4 |               -0.1 |        -2.8 |            320 |       11.3
+     725030:14732 | 2008 |    12 |  31 |   21 |     -6.7 |            -0.1 |   1005.9 |               0 |             8 |               -0.1 |        -3.9 |             10 |        5.1
+     ...
+     ...
+     (10 rows)
+
+
+### Build the code locally
 If this is your first time running SBT, you will be downloading the internet.
 
     cd killrweather
