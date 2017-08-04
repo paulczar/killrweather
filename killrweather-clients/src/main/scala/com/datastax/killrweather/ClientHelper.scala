@@ -33,7 +33,7 @@ private[killrweather] trait ClientHelper {
   protected val HttpPort = config.getInt("killrweather.http.port")
   protected val DefaultPath = config.getString("killrweather.data.load.path")
   protected val DefaultExtension = config.getString("killrweather.data.file.extension")
-  protected val KafkaHosts = immutableSeq(config.getStringList("kafka.hosts")).toSet
+  protected val KafkaHosts = config.getString("kafka.hosts").split(",").toSet
   protected val KafkaTopic = config.getString("kafka.topic.raw")
   protected val KafkaKey = config.getString("kafka.group.id")
   protected val KafkaBatchSendSize = config.getInt("kafka.batch.send.size")
